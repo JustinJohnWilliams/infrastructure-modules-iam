@@ -10,7 +10,6 @@ These are examples on how to use the modules in the [../modules](../modules/) di
 
 ## Usage
 - `cd` into the example dir you want
-- log into aws cli
 - `terraform plan`
 - Please `terraform destroy` when finished running examples
 

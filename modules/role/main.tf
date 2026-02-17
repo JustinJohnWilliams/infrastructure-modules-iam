@@ -38,14 +38,20 @@ data "aws_iam_policy_document" "assume_role" {
     effect  = "Allow"
     actions = compact(distinct(concat(["sts:AssumeRole"], var.assume_policy_actions)))
 
-    principals {
-      type        = "AWS"
-      identifiers = var.assume_policy_trusted_role_arns
+    dynamic "principals" {
+      for_each = length(var.assume_policy_trusted_role_arns) != 0 ? [1] : []
+      content {
+        type        = "AWS"
+        identifiers = var.assume_policy_trusted_role_arns
+      }
     }
 
-    principals {
-      type        = "Service"
-      identifiers = var.assume_policy_trusted_role_services
+    dynamic "principals" {
+      for_each = length(var.assume_policy_trusted_role_services) != 0 ? [1] : []
+      content {
+        type        = "Service"
+        identifiers = var.assume_policy_trusted_role_services
+      }
     }
 
     dynamic "condition" {
@@ -132,15 +138,15 @@ resource "aws_iam_role" "this" {
 
   assume_role_policy = local.is_assumable ? data.aws_iam_policy_document.assume_role["assumable"].json : null
 
-  dynamic "inline_policy" {
-    for_each = local.include_inline_policy ? [1] : []
-    content {
-      name   = local.inline_policy_name
-      policy = data.aws_iam_policy_document.inline.json
-    }
-  }
-
   tags = var.tags
+}
+
+resource "aws_iam_role_policy" "role_policy" {
+  count = local.include_inline_policy ? 1 : 0
+
+  name   = local.inline_policy_name
+  role   = aws_iam_role.this.id
+  policy = data.aws_iam_policy_document.inline.json
 }
 
 resource "aws_iam_role_policy_attachment" "custom" {
